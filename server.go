@@ -523,39 +523,104 @@ func errorHandler(w http.ResponseWriter, r *http.Request, conf *config) {
 
 	w.WriteHeader(http.StatusUnauthorized)
 
+	errorStr := ToCamelCaseWithSpaces(ssoErr)
+
 	_, err := io.WriteString(w, `
 	<!DOCTYPE html>
-	<html>
-		<head>
-			<title>Sign-On Error</title>
-			<style>
-				body {
-					width: 35em;
-					margin: 0 auto;
-					font-family: Tahoma, Verdana, Arial, sans-serif;
-				}
-				pre {
-					border: 1px solid #000;
-					padding: 3px;
-					background-color: #dedede;
-				}
-			</style>
-		</head>
+	<html lang="en">
+	<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Sign-On Error</title>
+	<style>
+		body {
+		margin: 0;
+		padding: 0;
+		font-family: Arial, sans-serif;
+		background: #f2f2f2;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 100vh;
+		text-align: center;
+		color: #333;
+		}
+		.container {
+		background: #fff;
+		padding: 40px;
+		border-radius: 8px;
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+		max-width: 500px;
+		}
+		.logo {
+		margin-bottom: 20px;
+		}
+		.logo img {
+		width: 150px;
+		}
+		h1 {
+		font-size: 36px;
+		margin-bottom: 20px;
+		color: #ff4c4c;
+		}
+		p {
+		font-size: 18px;
+		margin-bottom: 20px;
+		}
+		a {
+		display: inline-block;
+		padding: 10px 20px;
+		font-size: 16px;
+		color: #fff;
+		background: #007BFF;
+		text-decoration: none;
+		border-radius: 4px;
+		transition: background 0.3s ease;
+		}
+		a:hover {
+		background: #0056b3;
+		}
+		.error-icon {
+		font-size: 100px;
+		color: #ff4c4c;
+		margin-bottom: 20px;
+		}
+	</style>
+	</head>
 	<body>
-		<h1>Sign-On Error</h1>
-		<p>An error occurred with sign-on</p>
-		
-		<p><strong>Error Details:</strong></p>
-
-		<pre>`+html.EscapeString(ssoErr)+`</pre>
+	<div class="container">
+		<div class="logo">
+		<img src="https://images.octopus.bringitproducts.com/bringit.png" alt="Okta Logo">
+		</div>
+		<div class="error-icon">&#9888;</div> <!-- Unicode warning symbol -->
+		<h1>`+html.EscapeString(errorStr)+`</h1>
+		<p>You do not have permission to view this page.</p>
+		<p>If you believe this is an error, please contact the administrator.</p>
+	
+	</div>
 	</body>
-	</html>	
+	</html>
 	`)
 
 	if err != nil {
 		log.Printf("errorHandler: error when writing string to output, %v", err)
 		return
 	}
+}
+
+func ToCamelCaseWithSpaces(input string) string {
+	// Split the input string into words, separated by underscores
+	words := strings.Split(input, "_")
+	// Iterate through each word and convert it to CamelCase
+	for i, word := range words {
+		if len(word) > 0 {
+			// Convert first letter to uppercase and the rest to lowercase
+			words[i] = strings.ToUpper(string(word[0])) + strings.ToLower(word[1:])
+		}
+	}
+	// Join the words back together with spaces
+	output := strings.Join(words, " ")
+	return output
 }
 
 // getJWT queries the okta server with an access code.  A valid request will return a JWT identity token.
